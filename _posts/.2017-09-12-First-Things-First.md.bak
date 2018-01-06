@@ -4,6 +4,9 @@ values:
 excerpt: This is going to be a blog. That much is clear. I hesitate to make too many promises.
 Let's start with the current name: Solipsism in Robots. 
 title: First Things First
+tags:
+  -blog
+  -personal
 ---
 
 This is going to be a blog. That much is clear. I hesitate to make too many promises.
