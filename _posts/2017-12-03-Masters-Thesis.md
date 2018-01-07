@@ -2,6 +2,7 @@
 values:
   comments: true
 excerpt: An explanation of the problem I tackled in my Masters thesis, and the algorithm I came up with to solve it.
+toc: true
 title: Learning Environment Simulators from Sparse Signals (my Masters thesis)
 ---
 I spent most of 2017 on model-learning for planning from sparse signals. The complete thesis is available [here](/assets/files/masters-engineering-thesis.pdf).
@@ -119,12 +120,12 @@ The reward simpy doesn't offer enough signal to efficiently learn an environment
 
 However, I think there is something to learn from thinking about model-learning from sparse signals, if only as a thought exercise.
 
-Model-learning today is focused on using massive input signals (prior images) to predict massive future signals (future images), and the act of "learning" is the process of squeezing down high-dimensional inputs into lower-dimensional representations that can be simulated forward with minimal information loss, and then decoded back into a high dimensional image.
-In a sense, all the information you might want to use is already in the input somewhere - the "learning" is about distilling it into a compact representation.
+Environment-learning today is focused on using massive input signals (prior images) to predict massive future signals (future images), and the act of "learning" is the process of squeezing in as much of the high-dimensional inputs as you can into lower-dimensional representations that can be simulated forward with minimal information loss, and then decoded back into a high dimensional image.
+In a sense, the "learning" is about maximizing the amount of information encoded into the state.
 
-This approach tackles a fundamentally different problem in model-learning.
-Here, we use large input signals to predict sparse future signals - so sparse, in fact, that an agent might not receive any signal (reward) at all for several timesteps after the state.
-As a result, the learned state representation is initially sparse as well, as the learner has little signal compelling it to construct a state representation.
+Our approach tackles a fundamentally different type of learning problem.
+Here, we use large input signals to predict sparse future signals - so sparse, in fact, that an agent might not receive any signal (reward) at all for several timesteps after the observation.
+As a result, the learned state representation is initially sparse as well, as the learner has little signal compelling it to construct a complex state representation.
 The act of "learning" becomes a process of backsolving each signal, beginning from the simplest state representations (those right before a possible signal/reward event) and slowly growing in complexity (finding states that lead to states that lead to reward events, and so on).
 In this sense, learning a simulator from sparse signals is less about distilling the signal from the noise and more about recursively constructing more complicated state representations.
 Whether or not such a capability is tractable for modern deep learning, it is a different learning paradigm that I found interesting to explore.
@@ -137,16 +138,17 @@ By studying the simplest, harshest case of sparse-signal model-learning (pure-re
 
 To demonstrate the abilities and trends in such an approach, we need some simple benchmark environments.
 These environments should ideally:
-* have a reasonably-simple latent representation (if we can find it)
+* have an interpretable latent representation (if we can find it)
 * have a simple "encoder" mapping (from o to s), but no simple decoder mapping (from s to o)
 * have sparse rewards
 
 One such environment is what we'll call the "MNIST game".
 
-![Sample MNIST game transitions](/assets/images/mnist-deterministic.png)
+![Sample MNIST game transitions](/assets/images/mnist_deterministic.png)
 
 The logic of the game is simple: each observation is a digit (e.g. an image of a 5) from the MNIST dataset, corresponding to the environment's true hidden state (e.g. 5).
-Each action is a simple arithmetic operation mod 10. For example, the "increment 1" ... TODO
+Each action is a simple arithmetic operation mod 10.
+For example, the "increment 1" action
 
 The code for these environments, implemented using the OpenAI gym interface, is available [here](https://github.com/yo-shavit/gym_mnist).
 
