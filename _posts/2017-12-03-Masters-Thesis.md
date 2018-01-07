@@ -5,7 +5,7 @@ excerpt: An explanation of the problem I tackled in my Masters thesis, and the a
 toc: true
 title: Learning Environment Simulators from Sparse Signals (my Masters thesis)
 ---
-I spent most of 2017 on model-learning for planning from sparse signals. The complete thesis is available [here](/assets/files/masters-engineering-thesis.pdf).
+I spent most of 2017 on model-learning for planning from sparse signals. The complete thesis is available [here](/assets/files/masters-engineering-thesis.pdf), and the corresponding code is available [here](https://github.com/yo-shavit/sparse-model-learning).
 
 This post is intended as a friendly introduction to the idea I explored in my thesis.
 In part 1, I offer motivation for why one might want to learn an environment model from sparse signals like an agent's reward.
@@ -80,6 +80,8 @@ Let's recap, more rigorously:
 
 Given a series of historical environment sequences {o<sub>t</sub>, a<sub>t</sub>, r<sub>t</sub>, o<sub>t+1</sub>}<sub>n</sub> (observations, actions, rewards, and future observations respectively), we would like to find a state representation s<sub>t</sub> = E(o<sub>t</sub>) and transition model s<sub>t+1</sub>, r<sub>t</sub> ~ T(s<sub>t</sub>, a<sub>t</sub>) that best predict, given an initial state s<sub>t</sub> and a sequence of actions a<sub>t</sub>, a<sub>t+1</sub>, a<sub>t+2</sub>, ..., the sequence of resulting future rewards r<sub>t</sub>, r<sub>t+1</sub>, r<sub>t+2</sub>, ...
 
+(Side note: we use "rewards" (r) and "goals" (g) interchangeably - a "goal" is just a type of reward that occurs once at the end of an episode.)
+
 ![A diagram of the learning model](/assets/images/meng-network-diagram.png)
 
 In practice, we model the encoder E and transition function T as neural networks (splitting the reward-prediction component of the transition model into a separate network G). the rewards are predicted for a fixed k timesteps into the future.
@@ -137,10 +139,13 @@ By studying the simplest, harshest case of sparse-signal model-learning (pure-re
 ## Benchmark environments and a few results
 
 To demonstrate the abilities and trends in such an approach, we need some simple benchmark environments.
-These environments should ideally:
+These environments should:
 * have an interpretable latent representation (if we can find it)
 * have a simple "encoder" mapping (from o to s), but no simple decoder mapping (from s to o)
 * have sparse rewards
+
+I created several such environments, implemented using the OpenAI gym interface.
+The code is available [here](https://github.com/yo-shavit/gym_mnist).
 
 One such environment is what we'll call the "MNIST game".
 
@@ -148,8 +153,26 @@ One such environment is what we'll call the "MNIST game".
 
 The logic of the game is simple: each observation is a digit (e.g. an image of a 5) from the MNIST dataset, corresponding to the environment's true hidden state (e.g. 5).
 Each action is a simple arithmetic operation mod 10.
-For example, the "increment 1" action
+For example, the "+1" action would take an MNIST image of a 5, and convert it to an image of a 6, as in the above figure.
+The environment starts at a random digit, and the goal is always to get to 0 (upon which the agent receives a reward of 1, and the episode ends).
 
-The code for these environments, implemented using the OpenAI gym interface, is available [here](https://github.com/yo-shavit/gym_mnist).
+One nice attribute of this game is that we can easily change the gameplay dynamics by changing the legal transitions.
+So for example, allowing only "+1" and "-1" would yield a simple strategy (increment when above 5, decrement otherwise).
+On the other hand, a more complicated set of actions ("+1", "+0", "x2", "x3") yields a substantially more involved strategy.
 
-[MORE TO COME]
+Importantly, the "observed" MNIST digit image is drawn randomly from the set of all MNIST images of that digit. So while finding an "encoder" mapping from the observation to the true state is as easy as solving MNIST, finding a decoder to map from the latent state to the observation is hard. (A GAN could do it, but GANs are "hard".)
+
+When we train our environment model on the simple ("+1, -1") MNIST game, and then visualize the learned state embeddings use their top 3 principle components, we get something like this:
+
+{% include figure image_path="/assets/images/Linear_step_full.png" alt="MNIST game transitions over time="This shows the state representation of a model trained to predict reward 3 timesteps ahead. Top left: states directly encoded from observations; Top right: states simulated forward 1 timestep; Bottom left: states simulated forward 2 timesteps; Bottom right: states simulated forward 3 timesteps." %}
+
+As we can see, the model actually learns a high-quality encoder which initially separates the different latent states out quite nicely (learning only from their similarity in future rewards given similar actions).
+However, after each timestep, the quality of the embedding degrades (implying the transition function is unreliable) until at the end of the prediction horizon (the third step) the embeddings appear jumbled together.
+ That said, a pocket of 0s and 1s, corresponding to the rewarded state and thus easily distinguishable, is still visible.
+
+This suggests that while the learner is able to distinctly identify each of the states originally, the farther forward in time it simulates the state, the worse the state will be.
+
+
+NEXT: show generalization over time compared with n timesteps, explain group complexity thing
+
+FINALLY: show performance given a BFS planner
