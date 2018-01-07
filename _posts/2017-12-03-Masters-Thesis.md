@@ -164,7 +164,7 @@ Importantly, the "observed" MNIST digit image is drawn randomly from the set of 
 
 When we train our environment model on the simple ("+1, -1") MNIST game, and then visualize the learned state embeddings use their top 3 principle components, we get something like this:
 
-{% include figure image_path="/assets/images/Linear_step_full.png" alt="MNIST game transitions over time" caption="This shows the state representation of a model trained to predict reward 3 timesteps ahead. Top left: states directly encoded from observations; Top right: states simulated forward 1 timestep; Bottom left: states simulated forward 2 timesteps; Bottom right: states simulated forward 3 timesteps." %}
+{% include figure image_path="/assets/images/Linear_3step_full.png" alt="MNIST game transitions over time" caption="This shows the state representation of a model trained to predict reward 3 timesteps ahead. Top left: states directly encoded from observations; Top right: states simulated forward 1 timestep; Bottom left: states simulated forward 2 timesteps; Bottom right: states simulated forward 3 timesteps." %}
 
 As we can see, the model actually learns a high-quality encoder which initially separates the different latent states out quite nicely (learning only from their similarity in future rewards given similar actions).
 However, after each timestep, the quality of the embedding degrades (implying the transition function is unreliable) until at the end of the prediction horizon (the third step) the embeddings appear jumbled together.
@@ -207,6 +207,6 @@ For many more experiments and results, and a deeper mathematical treatment of th
 
 So, this might not be the satisfying answer our robot was looking for.
  He may need to wait another day before he can learn the rules of baseball from observation and coach-screaming alone.
-But hopefully he has at least learned that there is useful information in his coach's advice, if only he'd stop yelling at him to get off the field.
+But hopefully he has at least learned that there is useful information in his coach's advice, if only he'd stop yelling.
 
 Yours, Yo
