@@ -2,7 +2,7 @@
 values:
   comments: true
 excerpt: An explanation of the problem I tackled in my Masters thesis, and the algorithm I came up with to solve it.
-title: Learning Environment Simulators from Sparse Signals (My Masters Thesis)
+title: Learning Environment Simulators from Sparse Signals (my Masters thesis)
 ---
 I spent most of 2017 on model-learning for planning from sparse signals. The complete thesis is available [here](/assets/files/masters-engineering-thesis.pdf).
 
@@ -79,7 +79,14 @@ Let's recap, more rigorously:
 
 Given a series of historical environment sequences {o<sub>t</sub>, a<sub>t</sub>, r<sub>t</sub>, o<sub>t+1</sub>}<sub>n</sub> (observations, actions, rewards, and future observations respectively), we would like to find a state representation s<sub>t</sub> = E(o<sub>t</sub>) and transition model s<sub>t+1</sub>, r<sub>t</sub> ~ T(s<sub>t</sub>, a<sub>t</sub>) that best predict, given an initial state s<sub>t</sub> and a sequence of actions a<sub>t</sub>, a<sub>t+1</sub>, a<sub>t+2</sub>, ..., the sequence of resulting future rewards r<sub>t</sub>, r<sub>t+1</sub>, r<sub>t+2</sub>, ...
 
-In practice, we model the encoder E and transition function T as neural networks, and the rewards are predicted for a fixed k timesteps into the future.
+![A diagram of the learning model](/assets/images/meng-network-diagram.png)
+
+In practice, we model the encoder E and transition function T as neural networks (splitting the reward-prediction component of the transition model into a separate network G). the rewards are predicted for a fixed k timesteps into the future.
+
+One important benefit of this approach is that we are never required to construct a decoder, i.e. an inverse encoder that maps from the latent state s to a corresponding observation o.
+This is particularly useful for those domains in which no such decoder exists, like rendering the crowd in the background of a baseball game.
+ [Some](https://arxiv.org/abs/1511.05440) [work](https://sites.google.com/a/umich.edu/rubenevillegas/hierch_vid) has used generative modeling to avoid the need to have a perfect-fidelity decoder, but GANs are hard to train, and this still requires the latent state s to contain sufficient info to reconstruct the next state.
+In our model, the learned s = E(o) can be sparse and model only the portions of the state necessary to predict the reward.
 
 ### State Consistency Loss
 There are a few modifications necessary to make the learning process work, one of which is adding a "state consistency loss".
@@ -112,37 +119,35 @@ The reward simpy doesn't offer enough signal to efficiently learn an environment
 
 However, I think there is something to learn from thinking about model-learning from sparse signals, if only as a thought exercise.
 
-Model-learning today is focused on using massive input signals (prior images) to predict massive future signals (future images), and the act of "learning" is the process of squeezing down high-dimensional inputs into lower-dimensional representations that can be simulated forward with minimal information loss.
-In a sense, all the information you might want to use is already in the input somewhere - it's just a matter of distilling it.
+Model-learning today is focused on using massive input signals (prior images) to predict massive future signals (future images), and the act of "learning" is the process of squeezing down high-dimensional inputs into lower-dimensional representations that can be simulated forward with minimal information loss, and then decoded back into a high dimensional image.
+In a sense, all the information you might want to use is already in the input somewhere - the "learning" is about distilling it into a compact representation.
 
-This approach tackles a fundamentally different problem in model-learning. Here, we use massive input signals to predict sparse future signals - so sparse, in fact, that an agent might not receive any signal (reward) at all for several timesteps after the state.
-As a result, it becomes crucial for the learner to construct a sort of hypothesis about why each rare signal occurred the way it did.
-The act of "learning" becomes a process of backsolving, beginning from the simplest state representations (those right before a possible reward event) and slowly growing in complexity (finding states that lead to states that lead to reward events, and so on).
-In this sense, learning a simulator from sparse signals is less about distilling the signal from the noise and more about recursively constructing more complicated state representations. 
+This approach tackles a fundamentally different problem in model-learning.
+Here, we use large input signals to predict sparse future signals - so sparse, in fact, that an agent might not receive any signal (reward) at all for several timesteps after the state.
+As a result, the learned state representation is initially sparse as well, as the learner has little signal compelling it to construct a state representation.
+The act of "learning" becomes a process of backsolving each signal, beginning from the simplest state representations (those right before a possible signal/reward event) and slowly growing in complexity (finding states that lead to states that lead to reward events, and so on).
+In this sense, learning a simulator from sparse signals is less about distilling the signal from the noise and more about recursively constructing more complicated state representations.
 Whether or not such a capability is tractable for modern deep learning, it is a different learning paradigm that I found interesting to explore.
 
-We can also make the approach more tractable by providing denser (yet still sparse) signals than environment reward, as discussed in [Chapter 4 of the thesis](/assets/files/masters-engineering-thesis.pdf#page=61)). 
+We can also make the approach more tractable by providing denser (yet still sparse) signals than environment reward, as discussed in [Chapter 4 of the thesis](/assets/files/masters-engineering-thesis.pdf#page=61). 
 These auxiliary signals are often already vailable, like GPS or classical odometry on a robot.
 By studying the simplest, harshest case of sparse-signal model-learning (pure-reward), we can hopefully extract insights that will generalize to these more complicated and realistically-applicable cases.
 
+## Benchmark environments and a few results
 
+To demonstrate the abilities and trends in such an approach, we need some simple benchmark environments.
+These environments should ideally:
+* have a reasonably-simple latent representation (if we can find it)
+* have a simple "encoder" mapping (from o to s), but no simple decoder mapping (from s to o)
+* have sparse rewards
 
+One such environment is what we'll call the "MNIST game".
 
+![Sample MNIST game transitions](/assets/images/mnist-deterministic.png)
 
+The logic of the game is simple: each observation is a digit (e.g. an image of a 5) from the MNIST dataset, corresponding to the environment's true hidden state (e.g. 5).
+Each action is a simple arithmetic operation mod 10. For example, the "increment 1" ... TODO
 
-<!--I recently completed my Masters of Engineering thesis under the supervision of Prof. Leslie Kaelbling.-->
-<!--The document itself can be found [here](/assets/files/masters-engineering-thesis.pdf).-->
+The code for these environments, implemented using the OpenAI gym interface, is available [here](https://github.com/yo-shavit/gym_mnist).
 
-<!--A quick synopsis:-->
-
-<!--One of the central thrusts of model-based reinforcement learning, and learning for planning more broadly, is that we really need a model of the world to decide which actions you can take.-->
- <!--Blindly trying different strategies and repeating the ones that work (i.e. model free reinforcement learning) can let you solve [a surprisingly](https://www.youtube.com/watch?v=Ipi40cb_RsI) [large subset](https://www.youtube.com/watch?v=JzD8h4vtiuM) [of problems](https://gym.openai.com/envs/). -->
-<!--But for any task where you want to quickly learn to make decisions in unfamiliar instantiations of an environment, it really helps to be able to guess how the environment will respond to you.-->
-<!--Hand-coding the rules of reality can be prohibitively difficult, though, and so it'd be really great if we could somehow get an environment model for free using machine learning. A series of recent works have addressed this problem (TODO: ADD CITATIONS). The unifying idea in these works is that we'd like to learn a low-dimensional embedding of the environment, which we can then simulate forward and use for planning. -->
-<!--However, -->
-<!--(TODO: CREATE AN INTERMEDIATE FIGURE SHOWING ENCODER LOSS AND TRANSITION LOSS)-->
-<!--EXPLAIN WHY DOING THIS IS ESPECIALLY HARD/IMPOSSIBLE IN HIGH DIMENSIONS. -->
-
-<!--In my Masters thesis, I explored the problem of simultaneously learning a low-dimensional embedding of the environment, and a transition model for that embedding, **without** using image/observation reconstruction loss.-->
-<!--The immediate problem with such an approach is that, -->
-
+[MORE TO COME]
