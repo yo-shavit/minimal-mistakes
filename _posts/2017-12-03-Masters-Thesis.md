@@ -164,7 +164,7 @@ Importantly, the "observed" MNIST digit image is drawn randomly from the set of 
 
 When we train our environment model on the simple ("+1, -1") MNIST game, and then visualize the learned state embeddings use their top 3 principle components, we get something like this:
 
-{% include figure image_path="/assets/images/Linear_step_full.png" alt="MNIST game transitions over time"="This shows the state representation of a model trained to predict reward 3 timesteps ahead. Top left: states directly encoded from observations; Top right: states simulated forward 1 timestep; Bottom left: states simulated forward 2 timesteps; Bottom right: states simulated forward 3 timesteps." %}
+{% include figure image_path="/assets/images/Linear_step_full.png" alt="MNIST game transitions over time" caption="This shows the state representation of a model trained to predict reward 3 timesteps ahead. Top left: states directly encoded from observations; Top right: states simulated forward 1 timestep; Bottom left: states simulated forward 2 timesteps; Bottom right: states simulated forward 3 timesteps." %}
 
 As we can see, the model actually learns a high-quality encoder which initially separates the different latent states out quite nicely (learning only from their similarity in future rewards given similar actions).
 However, after each timestep, the quality of the embedding degrades (implying the transition function is unreliable) until at the end of the prediction horizon (the third step) the embeddings appear jumbled together.
@@ -181,7 +181,7 @@ The result is a metric approximately proportional to how well the learned model 
 Below are the plots of this "NMI score" over simulated time, for environment models trained to predict reward/state consistency a variable number of timesteps k into the future.
 (This time, the MNIST game is more complicated, with +1, 0, x2, and x3 all possible actions.)
 
-{% include figure image_path="assets/images/mnist_complex_lenvarying_smi.png" alt="NMI for varying prediction length"="The NMI scores for varying prediction-length environment learners." %}
+{% include figure image_path="assets/images/mnist_complex_lenvarying_smi.png" alt="NMI for varying prediction length" caption="The NMI scores for varying prediction-length environment learners." %}
 
 We can clearly see that all the learners accurately determine the initial state encodings (which is unsurprising, as MNIST is fairly easy to learn).
 However, over time, the learners with the longer prediction horizon consistently outperform those with shorter horizons (and this trend holds even beyond their fixed-length prediction windows).
@@ -193,7 +193,7 @@ We use a simple BFS planner that uses the environment simulator to look up to 5 
 Below, we plot its success rate in reaching the goal within the first 5 steps (again varying trained prediction length k).
 
 
-{% include figure image_path="assets/images/mnist_planning.png" alt="Success rate for model-based planners reaching their goal"="The success rates for BFS planners using learned environment models with variable training horizon. "Simple" refers to the simple MNIST game (+1, -1) and "complex" refers to the complex MNIST game (+1, +0, x2, x3)." %}
+{% include figure image_path="assets/images/mnist_planning.png" alt="Success rate for model-based planners reaching their goal" caption="The success rates for BFS planners using learned environment models with variable training horizon. 'Simple' refers to the simple MNIST game (+1, -1) and 'complex; refers to the complex MNIST game (+1, +0, x2, x3)." %}
 
 We can see that, beyond the shortest-horizon learners, nearly all of the learned models are able to consistently lead the agents to the goal.
 
