@@ -1,7 +1,7 @@
 ---
 values:
   comments: true
-excerpt: An explanation of the problem I tackled in my Masters thesis, and the algorithm I came up with to solve it.
+excerpt: The problem I tackled in my Masters thesis, and the algorithm I proposed to solve it.
 toc: true
 title: Learning Environment Simulators from Sparse Signals (my Masters thesis)
 ---
@@ -11,7 +11,6 @@ This post is intended as a friendly introduction to the idea I explored in my th
 In part 1, I offer motivation for why one might want to learn an environment model from sparse signals like an agent's reward.
 In part 2, I'll give an overview of the method itself, and some of inherent virtues and drawbacks.
 In part 3, I'll discuss the benchmark environments I created to evaluate the method, and a few of the actual results.
-
 
 ## Motivation
 I spent my Masters thesis trying to answer the following question:
@@ -140,7 +139,8 @@ By studying the simplest, harshest case of sparse-signal model-learning (pure-re
 
 To demonstrate the abilities and trends in such an approach, we need some simple benchmark environments.
 These environments should:
-* have an interpretable latent representation (if we can find it)
+* have an interpretable true latent representation (if we can find it)
+* have deterministic transitions in "true state" space (to avoid dealing with branching states; for more, see [Chapter 1 of the thesis](/assets/files/masters-engineering-thesis.pdf#page=15))
 * have a simple "encoder" mapping (from o to s), but no simple decoder mapping (from s to o)
 * have sparse rewards
 
@@ -164,15 +164,49 @@ Importantly, the "observed" MNIST digit image is drawn randomly from the set of 
 
 When we train our environment model on the simple ("+1, -1") MNIST game, and then visualize the learned state embeddings use their top 3 principle components, we get something like this:
 
-{% include figure image_path="/assets/images/Linear_step_full.png" alt="MNIST game transitions over time="This shows the state representation of a model trained to predict reward 3 timesteps ahead. Top left: states directly encoded from observations; Top right: states simulated forward 1 timestep; Bottom left: states simulated forward 2 timesteps; Bottom right: states simulated forward 3 timesteps." %}
+{% include figure image_path="/assets/images/Linear_step_full.png" alt="MNIST game transitions over time"="This shows the state representation of a model trained to predict reward 3 timesteps ahead. Top left: states directly encoded from observations; Top right: states simulated forward 1 timestep; Bottom left: states simulated forward 2 timesteps; Bottom right: states simulated forward 3 timesteps." %}
 
 As we can see, the model actually learns a high-quality encoder which initially separates the different latent states out quite nicely (learning only from their similarity in future rewards given similar actions).
 However, after each timestep, the quality of the embedding degrades (implying the transition function is unreliable) until at the end of the prediction horizon (the third step) the embeddings appear jumbled together.
  That said, a pocket of 0s and 1s, corresponding to the rewarded state and thus easily distinguishable, is still visible.
 
 This suggests that while the learner is able to distinctly identify each of the states originally, the farther forward in time it simulates the state, the worse the state will be.
+However, it's difficult to get a quantitative understanding of the learned state representations by eyeballing their principle components.
+
+To get a better sense of how well the model is learning the data clusters, I used the following measure.
+First, I took a group of state representations (e.g. states simulated 3 steps from first encoding) and ran [kmeans](https://en.wikipedia.org/wiki/K-means_clustering) to get a rough approximation of the 10 clusters that represent the data.
+Then, I computed the [normalized mutual information](http://scikit-learn.org/stable/modules/generated/sklearn.metrics.normalized_mutual_info_score.html) between the learned clusters and the true latent states (which I kept track of without informing the learning algorithm).
+The result is a metric approximately proportional to how well the learned model distinguishes between future states that are truly different.
+
+Below are the plots of this "NMI score" over simulated time, for environment models trained to predict reward/state consistency a variable number of timesteps k into the future.
+(This time, the MNIST game is more complicated, with +1, 0, x2, and x3 all possible actions.)
+
+{% include figure image_path="assets/images/mnist_complex_lenvarying_smi.png" alt="NMI for varying prediction length"="The NMI scores for varying prediction-length environment learners." %}
+
+We can clearly see that all the learners accurately determine the initial state encodings (which is unsurprising, as MNIST is fairly easy to learn).
+However, over time, the learners with the longer prediction horizon consistently outperform those with shorter horizons (and this trend holds even beyond their fixed-length prediction windows).
+This might be because predicting longer trajectories requires finding repeated patterns of states.
+The results of this experiment suggest that our models are in fact learning generalizable environment dynamics.
+
+Finally, we can evaluate the functional quality of our learned environment models by integrating them into a real planner and trying to plan.
+We use a simple BFS planner that uses the environment simulator to look up to 5 timesteps into the future. It ultimately chooses the path with the highest assigned probability of reaching the goal.
+Below, we plot its success rate in reaching the goal within the first 5 steps (again varying trained prediction length k).
 
 
-NEXT: show generalization over time compared with n timesteps, explain group complexity thing
+{% include figure image_path="assets/images/mnist_planning.png" alt="Success rate for model-based planners reaching their goal"="The success rates for BFS planners using learned environment models with variable training horizon. "Simple" refers to the simple MNIST game (+1, -1) and "complex" refers to the complex MNIST game (+1, +0, x2, x3)." %}
 
-FINALLY: show performance given a BFS planner
+We can see that, beyond the shortest-horizon learners, nearly all of the learned models are able to consistently lead the agents to the goal.
+
+So, the MNIST game is solvable by an agent aiming to exclusively do reward prediction.
+While this is an extremely simple example, it clues us into some of the trends of learning simulators from sparse signals.
+Longer training-horizons are vital for planners to generalize well.
+The structure of the environment's transitions affect its learnability.
+And the closer a state is to a signal/goal, the more likely it is to be accurately predicted by the environment model.
+
+For many more experiments and results, and a deeper mathematical treatment of the algorithm, you can check out [the thesis](/assets/files/masters-engineering-thesis.pdf). (Have I plugged it enough?)
+
+So, this might not be the satisfying answer our robot was looking for.
+ He may need to wait another day before he can learn the rules of baseball from observation and coach-screaming alone.
+But hopefully he has at least learned that there is useful information in his coach's advice, if only he'd stop yelling at him to get off the field.
+
+Yours, Yo
