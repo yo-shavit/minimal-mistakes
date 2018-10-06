@@ -25,7 +25,7 @@ Now, to some extent, this is fine. This is what we'd expect of a field focused p
 But in doing so, we are to some extent losing focus of the algorithms themselves.
 That's unfortunate, because in my experience, comparing different fairness algorithms' behavior on the same set of data is one of the best ways to gain an intuitive understanding of the fairness definitions those algorithms are aiming to enforce.
 
-To that end, I've begun compiling a set of fairness algorithm implementations [all in one place](https://github.com/yo-shavit/sparse-model-learning) so they can be easily compared and dissected.
+To that end, I've begun compiling a set of fairness algorithm implementations [all in one place](https://github.com/yo-shavit/fairml-farm) so they can be easily compared and dissected.
 The goal is to create a unified interface for training and evaluating algorithms on a wide swath of fairness metrics, so we can understand their tradeoffs not just [theoretically](https://arxiv.org/abs/1609.05807) but empirically.
 
 For now, I've just included the "binary classification with single protected attribute" case, and have mostly kept to group notions of fairness.
